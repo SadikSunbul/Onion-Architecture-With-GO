@@ -9,42 +9,45 @@ import (
 	"strconv"
 )
 
+// UserHandler kullanıcı islemlerini yapar
 type UserHandler struct {
-	UserService *services.UserService
+	UserService *services.UserService // kullanıcı islemlerini yapar
 }
 
+// NewUserHandler kullanıcı islemlerini yapar
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var user domain.User
-	err := json.NewDecoder(r.Body).Decode(&user)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	var user domain.User                         // kullanıcı
+	err := json.NewDecoder(r.Body).Decode(&user) // json ile kullanıcı bilgilerini alır
+	if err != nil {                              // hata varsa
+		http.Error(w, err.Error(), http.StatusBadRequest) // hata döndürür
 		return
 	}
 
-	err = h.UserService.CreateUser(&user)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	err = h.UserService.CreateUser(&user) // kullanıcı bilgilerini veritabanına kaydeder
+	if err != nil {                       // hata varsa
+		http.Error(w, err.Error(), http.StatusInternalServerError) // hata döndürür
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	w.Header().Set("Content-Type", "application/json") // json olarak döndürür
+	json.NewEncoder(w).Encode(user)                    // kullanıcı bilgileri döndürür
 }
 
+// GetUser kullanıcı bilgilerini veritabanından alır
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	vars := mux.Vars(r)                 // url parametrelerini alır
+	id, err := strconv.Atoi(vars["id"]) // url parametrelerinden idyi alır
+	if err != nil {                     // hata varsa
+		http.Error(w, err.Error(), http.StatusBadRequest) // hata döndürür
 		return
 	}
 
-	user, err := h.UserService.GetUser(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	user, err := h.UserService.GetUser(id) // kullanıcı bilgilerini veritabanından alır
+	if err != nil {                        // hata varsa
+		http.Error(w, err.Error(), http.StatusInternalServerError) // hata döndürür
+		return                                                     // hata döndürür
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	w.Header().Set("Content-Type", "application/json") // json olarak döndürür
+	json.NewEncoder(w).Encode(user)                    // kullanıcı bilgileri döndürür
 }

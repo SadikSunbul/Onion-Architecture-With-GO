@@ -13,41 +13,39 @@ import (
 	"os"
 )
 
+// Config yapılandırma dosyası
 type Config struct {
-	Database struct {
-		Connection string `yaml:"connection"`
-	} `yaml:"database"`
+	Database struct { // veritabanı bilgileri
+		Connection string `yaml:"connection"` // veritabanı bağlantısı
+	} `yaml:"database"` // veritabanı bilgileri
 }
 
 func main() {
 
-	configFile, err := os.ReadFile("../../config.yaml")
+	configFile, err := os.ReadFile("../../config.yaml") // config dosyasını okur
 	if err != nil {
-		log.Fatalf("config.yaml dosyası okunamadı: %v", err)
+		log.Fatalf("config.yaml dosyası okunamadı: %v", err) // hata döndürür
 	}
 
-	var config Config
-	err = yaml.Unmarshal(configFile, &config)
-	if err != nil {
+	var config Config                         // yapılandırma dosyası
+	err = yaml.Unmarshal(configFile, &config) // yapılandırma dosyasını okur
+	if err != nil {                           // hata varsa
 		log.Fatalf("Yapılandırma dosyası ayrıştırılamadı: %v", err)
 	}
 
-	conn, _ := url.Parse(config.Database.Connection)
-	conn.RawQuery = "sslmode=verify-ca;sslrootcert=ca.pem"
-	database.InitDB(conn.String())
+	conn, _ := url.Parse(config.Database.Connection)       // veritabanı bağlantısı
+	conn.RawQuery = "sslmode=verify-ca;sslrootcert=ca.pem" // ssl bilgileri
+	database.InitDB(conn.String())                         // veritabanını başlatır
 
-	//postgresql database bağlantısını burada sağla değilse çalışmaz
-	//database.InitDB("connectionstring")
+	userService := services.NewUserService()                       // kullanıcı islemlerini yapar
+	userHandler := &handlers.UserHandler{UserService: userService} // kullanıcı islemlerini yapar
 
-	userService := services.NewUserService()
-	userHandler := &handlers.UserHandler{UserService: userService}
+	r := mux.NewRouter()                // router oluşturur
+	r.Use(middleware.LoggingMiddleware) // middleware ekle
 
-	r := mux.NewRouter()
-	r.Use(middleware.LoggingMiddleware)
+	r.HandleFunc("/users", userHandler.CreateUser).Methods("POST")  // kullanıcı bilgilerini veritabanına kaydeder
+	r.HandleFunc("/users/{id}", userHandler.GetUser).Methods("GET") // kullanıcı bilgilerini veritabanından alır
 
-	r.HandleFunc("/users", userHandler.CreateUser).Methods("POST")
-	r.HandleFunc("/users/{id}", userHandler.GetUser).Methods("GET")
-
-	log.Println("Server started at :8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Println("Server started at :8080")     // sunucu baslatılır
+	log.Fatal(http.ListenAndServe(":8080", r)) // sunucu baslatılır
 }
